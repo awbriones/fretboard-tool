@@ -19,13 +19,14 @@
 
     <div class="bottom-settings">
         <div class="key-selectors">
+            <!-- <span class="selected-key-label">{{ selectedKey }}</span> -->
             <select class="custom-select" v-model="selectedScale">
                 <option v-for="(scale, scaleName) in majorMinorScales" :value="scaleName" :key="scaleName">
-                    {{ scale.label }}
+                    {{selectedKey + "&nbsp;" + scale.label }}
                 </option>
                 <option disabled>─────</option>
                 <option v-for="(scale, scaleName) in modeScales" :value="scaleName" :key="scaleName">
-                    {{ scale.label }}
+                    {{selectedKey + "&nbsp;" + scale.label }}
                 </option>
             </select>
 
@@ -343,6 +344,25 @@
  
         //      this.drawFretboard();
         //  },
+
+        changeKeyAndScale(clickedScaleDegree) {
+             const currentScale = this.scales[this.selectedScale];
+             console.log(currentScale);
+             const newMode = (currentScale.parentMode + clickedScaleDegree - 1) % 7;
+             console.log();
+             const newScale = Object.values(this.scales).find(scale => scale.parentMode === (newMode || 7));
+                console.log(newScale);
+                // find index of selectedKey in noteNames array
+                const selectedKeyIndex = this.noteNames.indexOf(this.selectedKey);
+             const rootNoteIndex = selectedKeyIndex + currentScale.intervals[clickedScaleDegree - 1];
+            console.log(rootNoteIndex);
+
+             this.selectedScale = newScale.label.toLowerCase();
+             this.selectedKey = this.noteNames[rootNoteIndex % 12];
+             this.updateFretboard();
+         },
+
+
  
  
          resetMode() {
@@ -509,7 +529,7 @@
                 const drawFretboardContent = () => {
                     this.svg = d3.select(this.$refs.fretboardSvg);
                     this.svg.select('g').remove(); //clear fretboard if it exists
-                    const self = this;
+                    // const self = this;
         
                     // Set the dimensions and margins of the fretboard
                     const margin = { top: 20, right: 20, bottom: 10, left: 48 };
@@ -627,7 +647,8 @@
                                 .classed('note-circle', true)
                                 .classed('root-note', noteInfo.scaleDegree === 1)
                                 .classed('open-string', fretIndex === 0) 
-                                .on('click', function() { self.handleNoteClick(noteInfo.scaleDegree); });
+                                .on('click', () => this.changeKeyAndScale(noteInfo.scaleDegree));
+
         
                                 const noteText = this.isScaleDegree ? noteInfo.scaleDegree : this.formatNoteSVG(noteInfo.note);
                                 const textElem = noteGroup
@@ -1103,12 +1124,23 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      gap: 8px;
      flex-direction: column;
      align-items: flex-start;
+     position: relative;
  }
  
  .key-selectors .row{
      display: flex;
      flex-direction: row;
      gap: 8px;
+ }
+ .selected-key-label{
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--gray-03);
+        text-align: center;
+        margin-bottom: 8px;
+        position: absolute;
+        top: 1px;
+        left: 1px;
  }
  
  
