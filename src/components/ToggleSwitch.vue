@@ -76,8 +76,9 @@ export default {
     transition: color 0.24s ease-out;
     background: transparent;
     padding: 0 12px;
-    transition: background-color, ease-out, .24s;
+    transition: background-color, ease-out, .12s;
     border-radius: 20px;
+    user-select: none;
 }
 
 .toggle-switch .toggle-switch-label:hover{

@@ -1,146 +1,158 @@
 <template>
-    <div class="top-row">
-        <h1 class="main-title">Fretboard Tool <span class="version"> V1</span></h1>
-        <toggle-switch left-label="Guitar" right-label="Bass" :modelValue="isGuitar"
-            @update:modelValue="isGuitar = $event"></toggle-switch>
-    </div>
-
-
-    <div class="fretboard-container">
-        <div class="tuning-controls" :class="{ bass: !isGuitar }">
-            <select class="tuning-select" v-for="(string, index) in tuning.slice(0, numStrings)" :key="index"
-                v-model="tuning[index]" @change="changeTuning(index, tuning[index])">
-                <option v-for="note in noteNames" :key="note" :value="note">{{ note }}</option>
-            </select>
-        </div>
-        <svg ref="fretboardSvg" width="100%" height="350" class="fretboard-svg" :class="`pm-${selectedParentMode}`"></svg>
-    </div>
-
-
-    <div class="bottom-settings">
-        <div class="key-selectors">
-            <!-- <span class="selected-key-label">{{ selectedKey }}</span> -->
-            <select class="custom-select" v-model="selectedScale">
-                <option v-for="(scale, scaleName) in majorMinorScales" :value="scaleName" :key="scaleName">
-                    {{selectedKey + "&nbsp;" + scale.label }}
-                </option>
-                <option disabled>─────</option>
-                <option v-for="(scale, scaleName) in modeScales" :value="scaleName" :key="scaleName">
-                    {{selectedKey + "&nbsp;" + scale.label }}
-                </option>
-            </select>
-
-            <span v-if="displayMode">
-                {{ modeName }} <button @click="resetMode">X</button>
-            </span>
-            <div class="key-selectors settings-container" :class="`pm-${selectedParentMode}`">
-                <!-- Sharps -->
-
-                <div class="row sharps">
-                    <button v-for="note in sharpNotesOnly" :key="note" class="key-button"
-                        :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
-                        :innerHTML="formatNote(note)"></button>
-                </div>
-
-                <!-- Non-accidentals -->
-                <div class="row non-accidentals">
-                    <button v-for="note in naturalNotesOnly" :key="note" class="key-button"
-                        :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
-                        v-html="formatNote(note)"></button>
-                </div>
-
-                <!-- Flats -->
-                <div class="row flats">
-                    <button v-for="note in flatNotesOnly" :key="note" class="key-button"
-                        :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
-                        v-html="formatNote(note)"></button>
-                </div>
-
-            </div>
+    <div class="main-container">
+        <div class="top-row">
+            <h1 class="main-title">Fretboard Tool <span class="version"> V1</span></h1>
+            <toggle-switch left-label="Guitar" right-label="Bass" :modelValue="isGuitar"
+                @update:modelValue="isGuitar = $event"></toggle-switch>
         </div>
 
-        <div class="highlighting-settings">
-            <div class="settings-row">
-                <toggle-switch left-label="Scale Degree" right-label="Note Name" :modelValue="isScaleDegree"
-                    @update:modelValue="isScaleDegree = $event"></toggle-switch>
+        <div class="fb-scroll-container">
+            <div class="fretboard-container">
+                <div class="tuning-controls" :class="{ bass: !isGuitar }">
+                    <select class="tuning-select" v-for="(string, index) in tuning.slice(0, numStrings)" :key="index"
+                        v-model="tuning[index]" @change="changeTuning(index, tuning[index])">
+                        <option v-for="note in noteNames" :key="note" :value="note">{{ note }}</option>
+                    </select>
+                </div>
+                <svg ref="fretboardSvg" width="100%" height="350" class="fretboard-svg" :class="`pm-${selectedParentMode}`"></svg>
+            </div>
+        </div>
+ 
+
+
+        <div class="bottom-settings">
+            <div class="key-selectors">
+                <!-- <span class="selected-key-label">{{ selectedKey }}</span> -->
+                <select class="custom-select" v-model="selectedScale" ref="select">
+                    <option v-for="(scale, scaleName) in majorMinorScales" :value="scaleName" :key="scaleName">
+                        {{selectedKey + "&nbsp;" + scale.label }}
+                    </option>
+                    <option disabled>─────</option>
+                    <option v-for="(scale, scaleName) in modeScales" :value="scaleName" :key="scaleName">
+                        {{selectedKey + "&nbsp;" + scale.label }}
+                    </option>
+                </select>
+
+                <span v-if="displayMode">
+                    {{ modeName }} <button @click="resetMode">X</button>
+                </span>
+                <div class="key-selectors settings-container" :class="`pm-${selectedParentMode}`">
+                    <!-- Sharps -->
+
+                    <div class="row sharps">
+                        <button v-for="note in sharpNotesOnly" :key="note" class="key-button"
+                            :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
+                            :innerHTML="formatNote(note)"></button>
+                    </div>
+
+                    <!-- Non-accidentals -->
+                    <div class="row non-accidentals">
+                        <button v-for="note in naturalNotesOnly" :key="note" class="key-button"
+                            :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
+                            v-html="formatNote(note)"></button>
+                    </div>
+
+                    <!-- Flats -->
+                    <div class="row flats">
+                        <button v-for="note in flatNotesOnly" :key="note" class="key-button"
+                            :class="{ 'key-button--selected': note === selectedKey }" @click="onKeyButtonClick(note)"
+                            v-html="formatNote(note)"></button>
+                    </div>
+
+                </div>
             </div>
 
-
-            <div class="scale-degree-settings settings-container" :class="`pm-${selectedParentMode}`">
-                <div v-for="(setting, index) in scaleDegreeSettings" :key="index" class="scale-degree-column">
-                    <!-- <h3>Scale Degree {{ index + 1 }}</h3> -->
-                    <label :class="[
-                            'show-label',
-                            'deg-' + (index + 1),
-                            setting.show ? 'active' : '',
-                            setting.color ? 'colored' : '',
-                            setting.bright ? 'bright' : 'dimmed'
-                        ]">
-                        <input type="checkbox" v-model="setting.show" @change="onScaleDegreeSettingChange"
-                            class="hidden-checkbox" />
-                        <!-- <span v-if="setting.show">{{ index + 1 }}</span> -->
-                        <span :class="[noteClass(scaleDegreeLabels[index]), calculateSharpFlatClasses()[index + 1]]" v-if="setting.show" v-html="formatNote(scaleDegreeLabels[index])"></span>
+            <div class="highlighting-settings">
+                <div class="settings-row">
+                    <toggle-switch left-label="Scale Degree" right-label="Note Name" :modelValue="isScaleDegree"
+                        @update:modelValue="isScaleDegree = $event"></toggle-switch>
+                </div>
 
 
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="hide-icon">
-                            <path
-                                d="m10.5867 5.09232c.4064-.06009.8257-.09232 1.2575-.09232 5.105 0 8.4548 4.50484 9.5802 6.2868.1363.2157.2044.3235.2425.4899.0286.1249.0286.322-.0001.4469-.0381.1663-.1067.2749-.2439.492-.2998.4745-.757 1.1415-1.3627 1.8649m-13.49213-7.86546c-2.16207 1.46666-3.62987 3.50436-4.30321 4.57026-.13683.2166-.20524.3249-.24337.4912-.02864.1249-.02865.3219-.00003.4469.03812.1663.10622.2741.24242.4898 1.12541 1.782 4.47528 6.2868 9.58032 6.2868 2.0584 0 3.8314-.7324 5.2884-1.7234m-14.28843-14.2766 18.00003 18m-11.12135-11.12132c-.5429.54292-.87868 1.29292-.87868 2.12132 0 1.6569 1.34313 3 3.00003 3 .8284 0 1.5784-.3358 2.1213-.8787"
-                                stroke="#808080" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                        </svg>
-                    </label>
-                    <label :class="[
-                            'color-label',
-                            setting.color ? 'active' : '',
-                            !setting.show ? 'hide' : '',
-                            setting.bright ? 'bright' : 'dimmed'
-                        ]">
-                        <input type="checkbox" v-model="setting.color" @change="onScaleDegreeSettingChange"
-                            class="hidden-checkbox">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            :class="['color-icon', 'color-icon-' + (index + 1)]">
-                            <g stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <div class="scale-degree-settings settings-container" :class="`pm-${selectedParentMode}`">
+                    <div v-for="(setting, index) in scaleDegreeSettings" :key="index" class="scale-degree-column">
+                        <!-- <h3>Scale Degree {{ index + 1 }}</h3> -->
+                        <label :class="[
+                                'show-label',
+                                'deg-' + (index + 1),
+                                setting.show ? 'active' : '',
+                                setting.color ? 'colored' : '',
+                                setting.bright ? 'bright' : 'dimmed'
+                            ]">
+                            <input type="checkbox" v-model="setting.show" @change="onScaleDegreeSettingChange"
+                                class="hidden-checkbox" />
+                            <!-- <span v-if="setting.show">{{ index + 1 }}</span> -->
+                            <span
+                                :class="[
+                                        noteClass(scaleDegreeLabels[index]),
+                                        isScaleDegree ? calculateSharpFlatClasses()[index + 1] : ''
+                                    ]"
+                                v-if="setting.show"
+                                v-html="formatNote(scaleDegreeLabels[index])"
+                                >
+                            </span>
+
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="hide-icon">
                                 <path
-                                    d="m2 12c0 5.5228 4.47715 10 10 10 1.6569 0 3-1.3431 3-3v-.5c0-.4644 0-.6966.0257-.8916.1772-1.3462 1.2365-2.4055 2.5827-2.5827.195-.0257.4272-.0257.8916-.0257h.5c1.6569 0 3-1.3431 3-3 0-5.52285-4.4772-10-10-10-5.52285 0-10 4.47715-10 10z" />
-                                <path d="m7 13c.55228 0 1-.4477 1-1s-.44772-1-1-1-1 .4477-1 1 .44772 1 1 1z" />
-                                <path d="m16 9c.5523 0 1-.44772 1-1s-.4477-1-1-1-1 .44772-1 1 .4477 1 1 1z" />
-                                <path d="m10 8c.5523 0 1-.44772 1-1s-.4477-1-1-1c-.55228 0-1 .44772-1 1s.44772 1 1 1z" />
-                            </g>
-                        </svg>
-                    </label>
-                    <label :class="['bright-label', setting.bright ? 'active' : '', !setting.show ? 'hide' : '']">
-                        <input type="checkbox" v-model="setting.bright" @change="onScaleDegreeSettingChange"
-                            class="hidden-checkbox">
-                        <svg v-if="setting.bright" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                            class="bright-icon">
+                                    d="m10.5867 5.09232c.4064-.06009.8257-.09232 1.2575-.09232 5.105 0 8.4548 4.50484 9.5802 6.2868.1363.2157.2044.3235.2425.4899.0286.1249.0286.322-.0001.4469-.0381.1663-.1067.2749-.2439.492-.2998.4745-.757 1.1415-1.3627 1.8649m-13.49213-7.86546c-2.16207 1.46666-3.62987 3.50436-4.30321 4.57026-.13683.2166-.20524.3249-.24337.4912-.02864.1249-.02865.3219-.00003.4469.03812.1663.10622.2741.24242.4898 1.12541 1.782 4.47528 6.2868 9.58032 6.2868 2.0584 0 3.8314-.7324 5.2884-1.7234m-14.28843-14.2766 18.00003 18m-11.12135-11.12132c-.5429.54292-.87868 1.29292-.87868 2.12132 0 1.6569 1.34313 3 3.00003 3 .8284 0 1.5784-.3358 2.1213-.8787"
+                                    stroke="#808080" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                            </svg>
+                        </label>
+                        <label :class="[
+                                'color-label',
+                                setting.color ? 'active' : '',
+                                !setting.show ? 'hide' : '',
+                                setting.bright ? 'bright' : 'dimmed'
+                            ]">
+                            <input type="checkbox" v-model="setting.color" @change="onScaleDegreeSettingChange"
+                                class="hidden-checkbox">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                :class="['color-icon', 'color-icon-' + (index + 1)]">
+                                <g stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                                    <path
+                                        d="m2 12c0 5.5228 4.47715 10 10 10 1.6569 0 3-1.3431 3-3v-.5c0-.4644 0-.6966.0257-.8916.1772-1.3462 1.2365-2.4055 2.5827-2.5827.195-.0257.4272-.0257.8916-.0257h.5c1.6569 0 3-1.3431 3-3 0-5.52285-4.4772-10-10-10-5.52285 0-10 4.47715-10 10z" />
+                                    <path d="m7 13c.55228 0 1-.4477 1-1s-.44772-1-1-1-1 .4477-1 1 .44772 1 1 1z" />
+                                    <path d="m16 9c.5523 0 1-.44772 1-1s-.4477-1-1-1-1 .44772-1 1 .4477 1 1 1z" />
+                                    <path d="m10 8c.5523 0 1-.44772 1-1s-.4477-1-1-1c-.55228 0-1 .44772-1 1s.44772 1 1 1z" />
+                                </g>
+                            </svg>
+                        </label>
+                        <label :class="['bright-label', setting.bright ? 'active' : '', !setting.show ? 'hide' : '']">
+                            <input type="checkbox" v-model="setting.bright" @change="onScaleDegreeSettingChange"
+                                class="hidden-checkbox">
+                            <svg v-if="setting.bright" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+                                class="bright-icon">
+                                <path
+                                    d="m12 2v2m0 16v2m-8-10h-2m4.31412-5.68588-1.41422-1.41422m12.786 1.41422 1.4142-1.41422m-12.78598 12.7901-1.41422 1.4142m12.786-1.4142 1.4142 1.4142m2.8999-7.1042h-2m-3 0c0 2.7614-2.2386 5-5 5-2.76142 0-5-2.2386-5-5 0-2.76142 2.23858-5 5-5 2.7614 0 5 2.23858 5 5z"
+                                    stroke="#f5f5f5" fill="none" stroke-linecap="round" stroke-linejoin="round"
+                                    stroke-width="2" />
+                            </svg>
+                            <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="bright-icon">
                             <path
-                                d="m12 2v2m0 16v2m-8-10h-2m4.31412-5.68588-1.41422-1.41422m12.786 1.41422 1.4142-1.41422m-12.78598 12.7901-1.41422 1.4142m12.786-1.4142 1.4142 1.4142m2.8999-7.1042h-2m-3 0c0 2.7614-2.2386 5-5 5-2.76142 0-5-2.2386-5-5 0-2.76142 2.23858-5 5-5 2.7614 0 5 2.23858 5 5z"
-                                stroke="#f5f5f5" fill="none" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="2" />
-                        </svg>
-                        <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="bright-icon">
-                        <path
-                            d="m12 17c2.7614 0 5-2.2386 5-5 0-2.76142-2.2386-5-5-5-2.76142 0-5 2.23858-5 5 0 2.7614 2.23858 5 5 5z"
-                            stroke="#808080" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
-                        <g fill="#808080">
-                            <path d="m13 20c0 .5523-.4477 1-1 1s-1-.4477-1-1 .4477-1 1-1 1 .4477 1 1z" />
-                            <path d="m13 4c0 .55228-.4477 1-1 1s-1-.44772-1-1 .4477-1 1-1 1 .44772 1 1z" />
-                            <path d="m5 12c0 .5523-.44772 1-1 1s-1-.4477-1-1 .44772-1 1-1 1 .4477 1 1z" />
-                            <path d="m21 12c0 .5523-.4477 1-1 1s-1-.4477-1-1 .4477-1 1-1 1 .4477 1 1z" />
-                            <path
-                                d="m18.364 16.9497c.3905.3906.3905 1.0237 0 1.4143-.3906.3905-1.0237.3905-1.4143 0-.3905-.3906-.3905-1.0237 0-1.4143.3906-.3905 1.0237-.3905 1.4143 0z" />
-                            <path
-                                d="m7.05025 5.63604c.39053.39052.39053 1.02369 0 1.41421-.39052.39053-1.02369.39053-1.41421 0-.39053-.39052-.39053-1.02369 0-1.41421.39052-.39053 1.02369-.39053 1.41421 0z" />
-                            <path
-                                d="m7.05025 16.9497c.39053.3906.39053 1.0237 0 1.4143-.39052.3905-1.02369.3905-1.41421 0-.39053-.3906-.39053-1.0237 0-1.4143.39052-.3905 1.02369-.3905 1.41421 0z" />
-                            <path
-                                d="m18.364 5.63604c.3905.39052.3905 1.02369 0 1.41421-.3906.39053-1.0237.39053-1.4143 0-.3905-.39052-.3905-1.02369 0-1.41421.3906-.39053 1.0237-.39053 1.4143 0z" />
-                        </g>
-                    </svg>
-                </label>
+                                d="m12 17c2.7614 0 5-2.2386 5-5 0-2.76142-2.2386-5-5-5-2.76142 0-5 2.23858-5 5 0 2.7614 2.23858 5 5 5z"
+                                stroke="#808080" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                                <g fill="#808080">
+                                    <path d="m13 20c0 .5523-.4477 1-1 1s-1-.4477-1-1 .4477-1 1-1 1 .4477 1 1z" />
+                                    <path d="m13 4c0 .55228-.4477 1-1 1s-1-.44772-1-1 .4477-1 1-1 1 .44772 1 1z" />
+                                    <path d="m5 12c0 .5523-.44772 1-1 1s-1-.4477-1-1 .44772-1 1-1 1 .4477 1 1z" />
+                                    <path d="m21 12c0 .5523-.4477 1-1 1s-1-.4477-1-1 .4477-1 1-1 1 .4477 1 1z" />
+                                    <path
+                                        d="m18.364 16.9497c.3905.3906.3905 1.0237 0 1.4143-.3906.3905-1.0237.3905-1.4143 0-.3905-.3906-.3905-1.0237 0-1.4143.3906-.3905 1.0237-.3905 1.4143 0z" />
+                                    <path
+                                        d="m7.05025 5.63604c.39053.39052.39053 1.02369 0 1.41421-.39052.39053-1.02369.39053-1.41421 0-.39053-.39052-.39053-1.02369 0-1.41421.39052-.39053 1.02369-.39053 1.41421 0z" />
+                                    <path
+                                        d="m7.05025 16.9497c.39053.3906.39053 1.0237 0 1.4143-.39052.3905-1.02369.3905-1.41421 0-.39053-.3906-.39053-1.0237 0-1.4143.39052-.3905 1.02369-.3905 1.41421 0z" />
+                                    <path
+                                        d="m18.364 5.63604c.3905.39052.3905 1.02369 0 1.41421-.3906.39053-1.0237.39053-1.4143 0-.3905-.39052-.3905-1.02369 0-1.41421.3906-.39053 1.0237-.39053 1.4143 0z" />
+                                </g>
+                            </svg>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-</div></template>
+</template>
  
  
  
@@ -232,6 +244,11 @@
              },
              { deep: true }
          );
+         this.$nextTick(() => {
+             const width = this.calculateSelectWidth();
+             this.$refs.select.style.width = `${width}px`;
+         });
+
      },
      beforeUnmount() {
          window.removeEventListener('resize', this.drawFretboard);
@@ -291,6 +308,10 @@
              this.updateFretboard();
          },
          selectedScale() {
+            this.$nextTick(() => {
+                 const width = this.calculateSelectWidth();
+                 this.$refs.select.style.width = `${width}px`;
+             });
              this.updateFretboard();
          },
          isScaleDegree() {
@@ -362,13 +383,9 @@
              this.updateFretboard();
          },
 
-
- 
- 
          resetMode() {
              this.selectedMode = 1;
              this.displayMode = false;
-             this.transposeScaleDegreeSettings(1);
              this.updateFretboard();
          },
  
@@ -415,17 +432,6 @@
              this.updateScaleDegreeClasses();
          },
  
-         transposeScaleDegreeSettings(clickedScaleDegree) {
-             const transposition = (clickedScaleDegree - this.selectedMode) % this.scaleDegreeSettings.length;
-             const originalScaleDegreeSettings = [...this.scaleDegreeSettings];
- 
-             for (let i = 0; i < 7; i++) {
-                 const newIndex = (i + transposition + 7) % 7;
-                 this.scaleDegreeSettings[i] = originalScaleDegreeSettings[newIndex];
-             }
- 
-             this.updateFretboard();
-         },
  
          formatNote(note) {
              let result = '';
@@ -493,6 +499,20 @@
 
              return sharpFlatClasses;
          },
+
+         calculateSelectWidth() {
+             const select = this.$refs.select;
+             const option = select.options[select.selectedIndex];
+             const text = option.textContent || option.innerText;
+
+             const canvas = document.createElement('canvas');
+             const context = canvas.getContext('2d');
+             context.font = getComputedStyle(select).font;
+             const width = context.measureText(text).width;
+
+             return Math.ceil(width + 56);
+         },
+
  
  
          
@@ -676,16 +696,14 @@
                                      if (sharpFlatClasses[noteInfo.scaleDegree]) {
                                          textElem
                                              .append('tspan')
-                                             .attr('class', `${sharpFlatClasses[noteInfo.scaleDegree]}-degree symbol`)
-                                             .text(sharpFlatClasses[noteInfo.scaleDegree] === 'sharp' ? '♯' : '♭');
+                                             .attr('class', `${sharpFlatClasses[noteInfo.scaleDegree]} symbol`)
+                                             .text(sharpFlatClasses[noteInfo.scaleDegree] === 'sharp-degree' ? '♯' : '♭');
                                      }
 
-                                     const mainTspan = textElem
+                                     textElem
                                          .append('tspan')
                                          .classed('note-main', true)
                                          .text(noteText);
-                                 
-
                                  }
 
 
@@ -791,15 +809,27 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      left: 7px;
  }
 
- 
- .fretboard-svg{
-     background: var(--black-02);
-     border-radius: 8px;;
+ span.flat-degree, span.sharp-degree {
+     padding-left: 5px;
+ }
+
+ .flat-degree.symbol , .sharp-degree.symbol {
+    font-size: 0.85em;
+    vertical-align: super;
+    font-family: 'M PLUS 1p', sans-serif;
  }
  
  .note-circle {
-   fill: var(--gray-01);
+    fill: var(--gray-01);
+     transition: all 0.12s ease-out;
+     cursor: pointer;
+     transform-box: fill-box;
+     transform-origin: center;
+     transform: scale(1);
+     opacity: 1;
+
  }
+
  .dimmed .note-circle{
      fill: var(--black-03);
  }
@@ -814,7 +844,13 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
    text-anchor: middle;
    user-select: none;
    pointer-events: none;
+
  }
+
+ .hide{
+     transform: scale(.01);
+      opacity: 0;
+  }
  
 /* For each parent mode */
 @for $i from 1 through 7 {
@@ -835,9 +871,7 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      fill: var(--light-48);
  }
  
- .hide{
-     display:none !important;
- }
+
  
  .key-button {
    border: none;
@@ -906,9 +940,9 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      -webkit-appearance: none; /* Remove default styling for WebKit browsers */
      -moz-appearance: none; /* Remove default styling for Mozilla browsers */
      font-family: 'Jost', Avenir Next, Helvetica, Arial, sans-serif;
+     user-select: none;
      height: 40px;
-     width: 108px;
-    text-overflow: ellipsis;
+     
      border-radius: 20px;
      background-color: transparent;
      border: none;
@@ -918,7 +952,7 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTYgOUwxMiAxNUwxOCA5IiBzdHJva2U9IiNGNUY1RjUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=");
      background-position: right 10px center; /* Position the custom arrow */
      background-repeat: no-repeat;
-     transition: background-color, ease-out, .24s;
+     transition: all .12s ease-out;
  }
  
  .custom-select:hover{
@@ -955,7 +989,7 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
    font-weight: 600; /* Make the text bold */
    color: var(--gray-03);
    text-align: center; /* Center the text */
-   transition: background-color 0.24s ease-out; /* Fix the transition property syntax */
+   transition: background-color 0.12s ease-out; /* Fix the transition property syntax */
  }
  select.tuning-select:hover {
    background-color: var(--light-12);
@@ -995,19 +1029,7 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
    background-color: var(--gray-01);
  }
  
-  .show-label, .color-label, .bright-label, .key-button {
-   cursor: pointer;
-   transition: all 0.24s ease-out;
-   transform-origin: center center;
- }
 
- .show-label:hover, .color-label:hover, .bright-label:hover, .key-button:hover {
-   transform: scale(1.125);
- }
-
- .show-label:active, .color-label:active, .bright-label:active, .key-button:active {
-   transform: scale(0.9);
- }
  
  
  .hide-icon {
@@ -1082,12 +1104,28 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
  
  
  /* --- Layout stuff ---- */
+
+//  .main-container {
+//   max-width: calc(100% - 160px); /* 80px margin on each side */
+//   margin: 80px auto;
+//   display: grid;
+//   grid-template-rows: auto auto auto;
+//   gap: 20px;
+// }
+
+ .main-container {
+     max-width: 1556px;
+     margin: 0 auto;
+ }
+
  
  .top-row {
-     display: flex;
+    display: flex;
      justify-content: space-between;
      align-items: center;
-     margin: 0 100px;
+     width: 100%;
+     max-width: calc(100% - 160px);
+     margin: 0 auto;
  }
  
  .settings-row{
@@ -1096,27 +1134,35 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      align-items: center;
      margin-bottom: 8px;
  }
- 
- .fretboard-container{
-     display: flex;
-     flex-direction: column;
-     justify-content: center;
-     margin: 8px 100px 16px;
-     position: relative;
-     min-width: 840px;
+
+ .fb-scroll-container{
+    width: 100%;
+    overflow-x: scroll;
  }
  
-//  .fretboard-svg{
-     
-//  }
+ .fretboard-container{
+    position: relative;
+    width: 100%;
+    max-width: calc(100% - 160px);
+    margin: 8px auto 0;
+    padding-bottom: 16px;
+ }
+ 
+ .fretboard-svg{
+     background: var(--black-02);
+     border-radius: 8px;
+     min-width: 900px;
+     width: 100%;
+ }
  
  .bottom-settings {
-     width: 100%;
-     margin: 0 100px;
-     margin-top: 24px;
-     display: flex;
-     justify-content: flex-start;
-     gap: 24px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-start;
+    gap: 24px;
+    max-width: calc(100% - 160px);
+    margin: 0 auto;
+    flex-wrap: wrap;
  }
  
  .key-selectors{
@@ -1142,7 +1188,6 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
         top: 1px;
         left: 1px;
  }
- 
  
  .settings-container {
      padding: 24px;
@@ -1175,25 +1220,102 @@ span.sharp-note .sharp-symbol, span.flat-note .flat-symbol {
      gap: 8px;
  }
  
-/*Animations */
 
- @keyframes noteAnimation {
-   0% {
-     transform: scale(0);
-     opacity: 0;
+  @media (min-width: 767px) and (max-width: 1196px) {
+
+        .top-row, .bottom-settings, .fretboard-container {
+            max-width: calc(100% - 80px);
+        }
+        .fretboard-container{
+            margin-top: 8px;
+            margin-left: 40px;
+            margin-right: 0;
+            margin-bottom: 0px;
+        }
+    }
+
+  @media (max-width: 767px) {
+
+   .top-row, .bottom-settings, .fretboard-container {
+      max-width: calc(100% - 40px);
    }
-   100% {
+
+//    .top-row, .bottom-settings {
+//      flex-direction: column;
+//      position: relative;
+//    }
+
+//    .top-row > div, .bottom-settings > div {
+//     //  width: 100%;
+//     position: relative;
+//    }
+ }
+
+ @media (max-width: 960px){
+    .bottom-settings {
+        justify-content: center;
+    }
+ }
+ /* Optional: Add a custom scrollbar for desktop screens */
+ @media (min-width: 768px) {
+   .middle-row::-webkit-scrollbar {
+     height: 8px;
+   }
+
+   .middle-row::-webkit-scrollbar-thumb {
+    background-color: var(--light-24);
+     border-radius: 4px;
+   }
+
+   .middle-row::-webkit-scrollbar-track {
+     background-color: var(--light-12);
+     border-radius: 4px;
+   }
+ }
+
+
+
+ /*Animations */
+
+  @keyframes noteAnimation {
+    0% {
+      transform: scale(0);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .note-circle.animating {
+    animation: noteAnimation 0.12s ease-out;
+  }
+
+
+  .show-label, .color-label, .bright-label, .key-button {
+     cursor: pointer;
+     transition: all 0.12s ease-out;
+     transform-origin: center center;
+   }
+
+   .show-label:hover, .color-label:hover, .bright-label:hover, .key-button:hover {
+     transform: scale(1.12);
+     filter: brightness(1.12);
+   }
+
+   .show-label:active, .color-label:active, .bright-label:active, .key-button:active {
      transform: scale(1);
-     opacity: 1;
    }
- }
 
- .note-circle.animating {
-   animation: noteAnimation 0.12s ease-out;
-   transform-box: fill-box;
-   transform-origin: center;
- }
+   g.note-circle:hover{
+      transform: scale(1.12);
+      filter: brightness(1.12);
+   }
 
+   g.note-circle:active{
+      transform: scale(1);
+   }
 
  </style>
  
